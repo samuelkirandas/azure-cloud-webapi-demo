@@ -1,0 +1,6 @@
+@MyCloudApp_HostAddress = http://localhost:5216
+
+GET {{MyCloudApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
