@@ -49,7 +49,8 @@ jobs:
           --name ${{ secrets.ACI_NAME }} \
           --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} \
           --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
-          --registry-username ${{ secrets.REGISTRY_NAME }} \
-          --registry-password $(az acr credential show --name ${{ secrets.REGISTRY_NAME }} --query "passwords[0].value" -o tsv) \
+          --registry-username ${{ secrets.ACR_USERNAME }} \
+          --registry-password ${{ secrets.ACR_PASSWORD }} \
           --cpu 1 --memory 1.5 --os-type Linux --ports 80 \
           --dns-name-label ${{ secrets.ACI_NAME }}
+
