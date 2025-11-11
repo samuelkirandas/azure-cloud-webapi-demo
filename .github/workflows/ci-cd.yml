@@ -42,15 +42,26 @@ jobs:
       run: |
         docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
 
-    - name: Deploy to Azure Container Instance
-      run: |
-        az container create \
-          --resource-group ${{ secrets.RESOURCE_GROUP }} \
-          --name ${{ secrets.ACI_NAME }} \
-          --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} \
-          --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
-          --registry-username ${{ secrets.ACR_USERNAME }} \
-          --registry-password ${{ secrets.ACR_PASSWORD }} \
-          --cpu 1 --memory 1.5 --os-type Linux --ports 80 \
-          --dns-name-label ${{ secrets.ACI_NAME }}
+    - name: Deploy or Update Azure Container Instance
+  run: |
+    # Check if the container already exists
+    if az container show --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.ACI_NAME }} > /dev/null 2>&1; then
+      echo "Container exists — updating image..."
+      az container update \
+        --resource-group ${{ secrets.RESOURCE_GROUP }} \
+        --name ${{ secrets.ACI_NAME }} \
+        --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
+    else
+      echo "Container not found — creating new container..."
+      az container create \
+        --resource-group ${{ secrets.RESOURCE_GROUP }} \
+        --name ${{ secrets.ACI_NAME }} \
+        --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} \
+        --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
+        --registry-username ${{ secrets.ACR_USERNAME }} \
+        --registry-password ${{ secrets.ACR_PASSWORD }} \
+        --cpu 1 --memory 1.5 --os-type Linux --ports 80 \
+        --dns-name-label mycloudapp-aci
+    fi
+
 
