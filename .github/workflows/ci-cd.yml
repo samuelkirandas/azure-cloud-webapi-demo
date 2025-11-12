@@ -9,60 +9,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-    - name: Restore dependencies
-      run: dotnet restore MyCloudApp/MyCloudApp.csproj
+      - name: Restore dependencies
+        run: dotnet restore MyCloudApp/MyCloudApp.csproj
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore MyCloudApp/MyCloudApp.csproj
+      - name: Build
+        run: dotnet build --configuration Release --no-restore MyCloudApp/MyCloudApp.csproj
 
-    - name: Publish
-      run: dotnet publish MyCloudApp/MyCloudApp.csproj -c Release -o MyCloudApp/out
+      - name: Publish
+        run: dotnet publish MyCloudApp/MyCloudApp.csproj -c Release -o MyCloudApp/out
 
-    - name: Login to Azure
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Azure Container Registry Login
-      run: az acr login --name ${{ secrets.REGISTRY_NAME }}
+      - name: Azure Container Registry Login
+        run: az acr login --name ${{ secrets.REGISTRY_NAME }}
 
-    - name: Build Docker image
-      run: |
-        docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} -f MyCloudApp/Dockerfile MyCloudApp
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} -f MyCloudApp/Dockerfile MyCloudApp
 
-    - name: Push Docker image
-      run: |
-        docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
 
-    - name: Deploy or Update Azure Container Instance
-  run: |
-    echo "Checking if container already exists..."
-    if az container show --resource-group "${{ secrets.RESOURCE_GROUP }}" --name "${{ secrets.ACI_NAME }}" > /dev/null 2>&1; then
-      echo "Container exists — updating image..."
-      az container update \
-        --resource-group "${{ secrets.RESOURCE_GROUP }}" \
-        --name "${{ secrets.ACI_NAME }}" \
-        --image "${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}"
-    else
-      echo "Container not found — creating new container..."
-      az container create \
-        --resource-group "${{ secrets.RESOURCE_GROUP }}" \
-        --name "${{ secrets.ACI_NAME }}" \
-        --image "${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}" \
-        --registry-login-server "${{ secrets.REGISTRY_LOGIN_SERVER }}" \
-        --registry-username "${{ secrets.ACR_USERNAME }}" \
-        --registry-password "${{ secrets.ACR_PASSWORD }}" \
-        --cpu 1 --memory 1.5 --os-type Linux --ports 80 \
-        --dns-name-label mycloudapp-aci
-    fi
-
-
-
+      - name: Deploy or Update Azure Container Instance
+        shell: bash
+        run: |
+          echo "Checking if container already exists..."
+          if az container show --resource-group "${{ secrets.RESOURCE_GROUP }}" --name "${{ secrets.ACI_NAME }}" > /dev/null 2>&1; then
+            echo "Container exists — updating image..."
+            az container update \
+              --resource-group "${{ secrets.RESOURCE_GROUP }}" \
+              --name "${{ secrets.ACI_NAME }}" \
+              --image "${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}"
+          else
+            echo "Container not found — creating new container..."
+            az container create \
+              --resource-group "${{ secrets.RESOURCE_GROUP }}" \
+              --name "${{ secrets.ACI_NAME }}" \
+              --image "${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}" \
+              --registry-login-server "${{ secrets.REGISTRY_LOGIN_SERVER }}" \
+              --registry-username "${{ secrets.ACR_USERNAME }}" \
+              --registry-password "${{ secrets.ACR_PASSWORD }}" \
+              --cpu 1 --memory 1.5 --os-type Linux --ports 80 \
+              --dns-name-label mycloudapp-aci
+          fi
