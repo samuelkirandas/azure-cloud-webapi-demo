@@ -69,6 +69,5 @@ jobs:
         --cpu 1 --memory 1.5 --os-type Linux --ports 80 \
         --dns-name-label mycloudapp-aci
     fi
-  shell: bash
 
 
