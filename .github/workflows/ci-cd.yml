@@ -43,7 +43,6 @@ jobs:
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Deploy or Recreate Azure Container Instance
-  shell: bash
   run: |
     echo "Checking if container already exists..."
     if az container show --resource-group "${{ secrets.RESOURCE_GROUP }}" --name "${{ secrets.ACI_NAME }}" > /dev/null 2>&1; then
@@ -70,4 +69,6 @@ jobs:
         --cpu 1 --memory 1.5 --os-type Linux --ports 80 \
         --dns-name-label mycloudapp-aci
     fi
+  shell: bash
+
 
